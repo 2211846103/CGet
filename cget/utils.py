@@ -24,28 +24,72 @@ import urllib.request
 import shutil
 import tempfile
 import subprocess
+import requests
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version, InvalidVersion
 from pathlib import Path
 
 
-def acquire_headers(repo: str, dest_root):
-   user, name = repo.split("/")
-   dest_root = Path(dest_root) / name
+def get_github_tags(source) -> list[str]:
+  """Fetch all git tags from GitHub repo 'user/repo'."""
+  url = f"https://api.github.com/repos/{source}/tags"
+  tags = []
+  page = 1
 
-   with tempfile.TemporaryDirectory() as tmpdir:
-      print(f"Cloning {repo} into temporary directory...")
-      subprocess.run(["git", "clone", "--depth", "1", f"http://github.com/{repo}.git"], cwd=tmpdir, check=True, stdout=subprocess.DEVNULL)
+  while True:
+    response = requests.get(url, params={"per_page": 100, "page": page})
+    response.raise_for_status()
+    data = response.json()
+    if not data:
+      break
+    tags.extend([tag["name"] for tag in data])
+    page += 1
+    
+  return tags
 
-      source_dir = Path(tmpdir) / name
 
-      headers = list(source_dir.rglob("*.h")) + list(source_dir.rglob("*.hpp")) + list(source_dir.rglob("*.hxx"))
+def find_best_tag(source: str, version_range: str):
+  """Finds the latest stable version from source that satisfies the range"""
+  spec = SpecifierSet(version_range)
 
-      for header in headers:
-         rel_path = header.relative_to(source_dir)
-         target_path = dest_root / rel_path
-         target_path.parent.mkdir(parents=True, exist_ok=True)
-         shutil.copy2(header, target_path)
+  candidate_versions = []
+  for tag in get_github_tags(source):
+    clean_tag = tag.lstrip('v')
+    try:
+      version = Version(clean_tag)
+      if not version.is_prerelease:
+        candidate_versions.append(version)
+    except InvalidVersion:
+      continue
       
-      print(f"Headers copied to: {dest_root}")
+  matching_versions: list[str] = list(spec.filter(candidate_versions))
+
+  if matching_versions:
+    matching_versions.sort()
+    return f"{matching_versions[-1]}"
+
+  return None
+
+
+def acquire_headers(repo: str, dest_root):
+  user, name = repo.split("/")
+  dest_root = Path(dest_root) / name
+
+  with tempfile.TemporaryDirectory() as tmpdir:
+    print(f"Cloning {repo} into temporary directory...")
+    subprocess.run(["git", "clone", "--depth", "1", f"http://github.com/{repo}.git"], cwd=tmpdir, check=True, stdout=subprocess.DEVNULL)
+
+    source_dir = Path(tmpdir) / name
+
+    headers = list(source_dir.rglob("*.h")) + list(source_dir.rglob("*.hpp")) + list(source_dir.rglob("*.hxx"))
+
+    for header in headers:
+      rel_path = header.relative_to(source_dir)
+      target_path = dest_root / rel_path
+      target_path.parent.mkdir(parents=True, exist_ok=True)
+      shutil.copy2(header, target_path)
+    
+    print(f"Headers copied to: {dest_root}")
 
 
 def create_project_structure(name, cmake_version, force):

@@ -23,10 +23,10 @@ import json
 import shutil
 
 
-@click.command("remove")
+@click.command("uninstall")
 @click.argument("source")
-def remove_command(source: str):
-  """Remove a dependency by source"""
+def uninstall_command(source: str):
+  """Uninstall a dependency by source"""
   if not os.path.exists("cget.json"):
     click.echo("Error: cget.json not found.")
     return
@@ -46,7 +46,9 @@ def remove_command(source: str):
   with open("cget.json", "w") as f:
     json.dump(data, f, indent=2)
 
-  path = os.path.join("extern", source)
+  _,repo = source.split("/", 1)
+
+  path = os.path.join("extern", repo)
   if os.path.exists(path):
     shutil.rmtree(path)
 
