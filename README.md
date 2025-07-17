@@ -21,6 +21,11 @@ cd CGet
 pip install -r requirements.txt
 ```
 
+To install throughout in your enviroment run:
+```bash
+pip install -e .
+```
+
 ---
 
 ## Usage
