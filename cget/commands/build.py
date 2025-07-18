@@ -24,7 +24,7 @@ import json
 import subprocess
 import platform
 from pathlib import Path
-from cget.utils import get_default_branch,find_best_tag
+from cget.utils import find_best_tag
 import urllib.request
 
 
@@ -88,12 +88,7 @@ def build_command(generator: str, build_dir, verbose):
       lines.append(f"  NAME {name}")
       lines.append(f"  GITHUB_REPOSITORY {source}")
       lines.append(f"  GIT_SHALLOW TRUE")
-      if version != "latest":
-        version = find_best_tag(source, version)
-        lines.append(f"  GIT_TAG {version}")
-      else:
-        branch = get_default_branch(source)
-        lines.append(f"  GIT_TAG {branch}")
+      lines.append(f"  GIT_TAG {find_best_tag(source, version)}")
       lines.append(")\n")
 
       lines.append(f"list(APPEND DEPENDENCY_LIBS {name}::{name})")
@@ -126,4 +121,6 @@ def build_command(generator: str, build_dir, verbose):
     click.echo("Build failed.")
     return
   
+  os.remove("_dependencies.cmake")
+
   click.echo("Build complete.")

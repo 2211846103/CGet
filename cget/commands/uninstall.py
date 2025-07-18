@@ -21,6 +21,7 @@ import click
 import os
 import json
 import shutil
+from cget.utils import save_lock, load_lock
 
 
 @click.command("uninstall")
@@ -45,6 +46,20 @@ def uninstall_command(source: str):
 
   with open("cget.json", "w") as f:
     json.dump(data, f, indent=2)
+  
+  if os.path.exists("cget.lock.json"):
+    lock_data = load_lock()
+
+    to_remove = None
+    for name, meta in lock_data.items():
+      if meta.get("source") == source:
+        to_remove = name
+        break
+
+    if to_remove:
+      del lock_data[to_remove]
+      save_lock(lock_data)
+      click.echo(f"Updated cget.lock.json to remove '{to_remove}'.")
 
   _,repo = source.split("/", 1)
 

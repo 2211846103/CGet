@@ -24,6 +24,7 @@ from cget.commands.install import install_command
 from cget.commands.build import build_command
 from cget.commands.uninstall import uninstall_command
 from cget.commands.list import list_command
+from cget.commands.update import update_command
 
 
 @click.group()
@@ -36,3 +37,4 @@ cli.add_command(install_command)
 cli.add_command(build_command)
 cli.add_command(uninstall_command)
 cli.add_command(list_command)
+cli.add_command(update_command)

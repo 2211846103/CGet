@@ -22,7 +22,7 @@ import click
 import json
 import os
 from pathlib import Path
-from cget.utils import acquire_headers
+from cget.utils import acquire_headers, load_lock, save_lock, find_best_tag
 
 
 @click.command("install")
@@ -45,7 +45,7 @@ def install_command(source: str, version, dev: bool, force: bool, platforms:str)
       click.echo("Error: Dependency must be in 'user/repo' format.")
       return
     
-    user, repo = source.split("/", 1)
+    _, repo = source.split("/", 1)
     name = repo
     version = version or "latest"
     if platforms:
@@ -89,6 +89,15 @@ def install_command(source: str, version, dev: bool, force: bool, platforms:str)
       acquire_headers(source, "extern")
     else:
       click.echo("Headers already installed. Use --force to re-download.")
+    
+    lock = load_lock()
+    lock[name] = {
+        "name": name,
+        "source": source,
+        "resolved": f"https://github.com/{source}.git", # optional, you can use latest tag or fake
+        "version": find_best_tag(source, version)
+    }
+    save_lock(lock)
 
   else:
     click.echo("Installing all dependencies from cget.json...")
@@ -99,9 +108,14 @@ def install_command(source: str, version, dev: bool, force: bool, platforms:str)
       return
     
     installed_count = 0
+    lock = load_lock()
     for dep in dependencies:
       dep_name = dep["name"]
       dep_source = dep["source"]
+      locked = lock.get(dep_name)
+      if locked:
+          dep_source = locked["source"]
+          version = locked["version"]
       header_path = Path("extern") / dep_name
       
       if not force and header_path.exists():

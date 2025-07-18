@@ -25,9 +25,22 @@ import shutil
 import tempfile
 import subprocess
 import requests
+import os
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version, InvalidVersion
 from pathlib import Path
+
+
+def save_lock(lock_data):
+  with open("cget.lock.json", "w") as f:
+    json.dump(lock_data, f, indent=2)
+
+
+def load_lock():
+  if Path("cget.lock.json").exists():
+    with open("cget.lock.json", "r") as f:
+      return json.load(f)
+  return {}
 
 
 def get_github_tags(source) -> list[str]:
@@ -50,6 +63,9 @@ def get_github_tags(source) -> list[str]:
 
 def find_best_tag(source: str, version_range: str):
   """Finds the latest stable version from source that satisfies the range"""
+  if version_range == "latest":
+    return find_best_tag(source, ">=0.0");
+
   spec = SpecifierSet(version_range)
 
   candidate_versions = []
@@ -103,7 +119,7 @@ def create_project_structure(name, cmake_version, force):
     shutil.rmtree(base)
   base.mkdir()
 
-  (base / ".gitignore").write_text("build/\n")
+  (base / ".gitignore").write_text("build/\ncget.json\n")
   (base / "README.md").write_text(f"# {name}\n\nProject generated with cget.")
   (base / "LICENSE.md").write_text("MIT License\n\n[Put your license text here]")
   (base / "CMakeLists.txt").write_text(f"""\
