@@ -28,10 +28,9 @@ from cget.utils import acquire_headers, load_lock, save_lock, find_best_tag
 @click.command("install")
 @click.argument("source", required=False)
 @click.option("--dev", is_flag=True, default=False, help="Add to development enviroment only")
-@click.option("--version", default=None, help="Version or Tag to checkout (optional)")
 @click.option("--force", is_flag=True, default=False, help="Force re-download of headers")
 @click.option("--platforms", default=None, help="Comma-separated list of supported platforms")
-def install_command(source: str, version, dev: bool, force: bool, platforms:str):
+def install_command(source: str, dev: bool, force: bool, platforms:str):
   """Add a dependency by user/repo format, e.g. fmtlib/fmt"""
   if not os.path.exists("cget.json"):
     click.echo("Error: cget.json not found. Run `cget init` first.")
@@ -45,6 +44,10 @@ def install_command(source: str, version, dev: bool, force: bool, platforms:str)
       click.echo("Error: Dependency must be in 'user/repo' format.")
       return
     
+    version = None
+    if "@" in source:
+      source, version = source.split("@", 1)
+    
     _, repo = source.split("/", 1)
     name = repo
     version = version or "latest"
@@ -53,15 +56,19 @@ def install_command(source: str, version, dev: bool, force: bool, platforms:str)
 
     if "dependencies" not in data:
       data["dependencies"] = []
+    if "devDependencies" not in data:
+      data["devDependencies"] = []
 
-    existing = next((d for d in data["dependencies"] if d["name"] == name), None)
+    section = "devDependencies" if dev else "dependencies"
+    deps = data[section]
+
+    existing = next((d for d in deps if d["name"] == name), None)
     updated = False
 
     if existing:
       if existing["version"] != version or existing["build"] != ("dev" if dev else "release"):
         click.echo(f"Dependency '{name}' exists, updating it.")
         existing["version"] = version
-        existing["build"] = "dev" if dev else "release"
         if platforms:
           existing["platforms"] = platforms
         updated = True
@@ -71,12 +78,11 @@ def install_command(source: str, version, dev: bool, force: bool, platforms:str)
       dep = {
         "name": name,
         "source": source,
-        "version": version,
-        "build": "dev" if dev else "release"
+        "version": version
       }
       if platforms:
         dep["platforms"] = platforms
-      data["dependencies"].append(dep)
+      deps.append(dep)
       updated = True
 
     if updated:
@@ -102,7 +108,7 @@ def install_command(source: str, version, dev: bool, force: bool, platforms:str)
   else:
     click.echo("Installing all dependencies from cget.json...")
 
-    dependencies = data.get("dependencies", [])
+    dependencies = data.get("dependencies", []) + data.get("devDependencies", [])
     if not dependencies:
       click.echo("No dependencies found in cget.json. Nothing to do.")
       return

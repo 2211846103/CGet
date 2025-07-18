@@ -119,12 +119,14 @@ def create_project_structure(name, cmake_version, force):
     shutil.rmtree(base)
   base.mkdir()
 
-  (base / ".gitignore").write_text("build/\ncget.json\n")
+  (base / ".gitignore").write_text("build/\ncget.json\n.cget_packages/\n")
   (base / "README.md").write_text(f"# {name}\n\nProject generated with cget.")
   (base / "LICENSE.md").write_text("MIT License\n\n[Put your license text here]")
   (base / "CMakeLists.txt").write_text(f"""\
 cmake_minimum_required(VERSION {cmake_version})
 project({name})
+
+set(CPM_SOURCE_CACHE "${{CMAKE_SOURCE_DIR}}/.cget_packages")
 
 include(cmake/CPM.cmake)
 if(EXISTS "${{CMAKE_SOURCE_DIR}}/_dependencies.cmake")

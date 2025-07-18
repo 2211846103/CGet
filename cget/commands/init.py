@@ -35,7 +35,8 @@ def init_command(name, cmake_version, force):
   data = {
     "name": name,
     "version": "0.1.0",
-    "dependencies": []
+    "dependencies": [],
+    "devDependencies": []
   }
 
   with open(base / "cget.json", "w") as out:

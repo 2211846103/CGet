@@ -29,10 +29,11 @@ import urllib.request
 
 
 @click.command("build")
+@click.option("--dev", is_flag=True, default=False, help="Build the project in Development mode.")
 @click.option("--generator", default=None, help="CMake generator to use.")
 @click.option("--build-dir", default="./build", help="Build path")
 @click.option("--verbose", is_flag=True, default=False, help="Verbose output")
-def build_command(generator: str, build_dir, verbose):
+def build_command(dev: bool, generator: str, build_dir, verbose):
   """Install all dependencies and build project"""
   
   project_root = Path(".")
@@ -61,6 +62,9 @@ def build_command(generator: str, build_dir, verbose):
     data = json.load(f)
 
   dependencies = data.get("dependencies", [])
+  if dev:
+    dependencies += data.get("devDependencies", [])
+
   if not dependencies:
     click.echo("No dependencies listed in cget.json")
   else:
@@ -110,6 +114,8 @@ def build_command(generator: str, build_dir, verbose):
   if generator:
     cmd.append("-G")
     cmd.append(f"{generator}")
+  if dev:
+    cmd.append("-DCMAKE_BUILD_TYPE=Debug")
   result = subprocess.run(cmd, cwd=build_dir)
   if result.returncode != 0:
     click.echo("CMake configuration failed.")

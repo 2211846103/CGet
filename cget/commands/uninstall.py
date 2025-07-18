@@ -35,14 +35,20 @@ def uninstall_command(source: str):
   with open("cget.json", "r") as f:
     data = json.load(f)
 
-  deps = data.get("dependencies", [])
-  filtered = [d for d in deps if d["source"] != source]
+  found = False
 
-  if len(filtered) == len(deps):
+  for section in ["dependencies", "devDependencies"]:
+    deps = data.get(section, [])
+    filtered = [d for d in deps if d["source"] != source]
+
+    if len(filtered) != len(deps):
+      data[section] = filtered
+      found = True
+      click.echo(f"Removed '{source}' from {section}.")
+
+  if not found:
     click.echo(f"Dependency '{source}' not found.")
     return
-  
-  data["dependencies"] = filtered
 
   with open("cget.json", "w") as f:
     json.dump(data, f, indent=2)
