@@ -23,9 +23,9 @@ import os
 import json
 import subprocess
 import platform
-from pathlib import Path
-from cget.utils import find_best_tag
 import urllib.request
+from pathlib import Path
+from cget.utils.misc import find_best_tag, load_lock
 
 
 @click.command("build")
@@ -80,19 +80,18 @@ def build_command(dev: bool, generator: str, build_dir, verbose):
 
     current_platform = platform.system().lower()
 
-    for dep in dependencies:
+    lock = load_lock()
+
+    for name, dep in lock.items():
       if "platforms" in dep and current_platform not in dep["platforms"]:
         continue
 
-      name: str = dep["name"]
-      source = dep["source"]
-      version = dep.get("version", "latest")
+      version = dep.get("version")
 
       lines.append("CPMAddPackage(")
       lines.append(f"  NAME {name}")
-      lines.append(f"  GITHUB_REPOSITORY {source}")
-      lines.append(f"  GIT_SHALLOW TRUE")
-      lines.append(f"  GIT_TAG {find_best_tag(source, version)}")
+      lines.append(f"  VERSION {version}")
+      lines.append(f'  SOURCE_DIR "${{CMAKE_SOURCE_DIR}}/.cget_packages/{name}@{version}"')
       lines.append(")\n")
 
       lines.append(f"list(APPEND DEPENDENCY_LIBS {name}::{name})")

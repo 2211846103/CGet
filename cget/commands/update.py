@@ -1,7 +1,8 @@
 import click
 import os
 import json
-from cget.utils import acquire_headers, save_lock, find_best_tag
+from cget.utils.install import download_package
+from cget.utils.misc import find_best_tag, save_lock
 
 
 @click.command("update")
@@ -10,7 +11,7 @@ def update_command():
   if not os.path.exists("cget.json"):
     click.echo("Error: cget.json not found.")
     return
-  
+
   with open("cget.json", "r") as f:
     manifest = json.load(f)
 
@@ -20,24 +21,32 @@ def update_command():
   for section in all_sections:
     deps = manifest.get(section, [])
     if not deps:
-      click.echo(f"No {section} to update.")
-      return
+      continue
 
     for dep in deps:
       name = dep["name"]
-      source = dep["source"]
-      version = dep.get("version", None)
+      version_range = dep.get("version", "latest")
+      source = dep.get("source")
+      
+      if not source:
+        # Default to user/repo = name if source not set
+        source = name
 
-      acquire_headers(source, "extern")
+      resolved_version = find_best_tag(source, version_range)
+
+      success = download_package(name, source, resolved_version, updated=True, force=True)
+      if not success:
+        click.echo(f"Failed to update '{name}'")
+        continue
 
       combined_lock_data[name] = {
         "name": name,
         "source": source,
         "resolved": f"https://github.com/{source}.git",
-        "version": find_best_tag(source, version)
+        "version": resolved_version
       }
 
-      click.echo(f"Updated '{name}' to {combined_lock_data[name]['version']}")
-  
+      click.echo(f"Updated '{name}' to version '{resolved_version}'")
+
   save_lock(combined_lock_data)
   click.echo("All dependencies updated and lock file saved.")

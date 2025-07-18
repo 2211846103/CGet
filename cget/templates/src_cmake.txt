@@ -1,0 +1,8 @@
+file(GLOB_RECURSE SRC "*.cpp")
+add_library(${project_name}_lib ${SRC})
+
+target_include_directories(${project_name}_lib PUBLIC
+  ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/extern
+)
+target_compile_definitions(${project_name}_lib PUBLIC ${MACROS})

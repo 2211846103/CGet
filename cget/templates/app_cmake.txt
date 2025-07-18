@@ -1,0 +1,6 @@
+add_executable(${project_name}_app
+    app.cpp
+)
+
+target_link_libraries(${project_name}_app PRIVATE ${project_name}_lib ${DEPENDENCY_LIBS})
+target_compile_definitions(${project_name}_app PUBLIC ${MACROS})

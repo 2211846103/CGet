@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION ${cmake_version})
+project(${project_name} VERSION ${version})
+
+include(cmake/CPM.cmake)
+if(EXISTS "${CMAKE_SOURCE_DIR}/_dependencies.cmake")
+    include("${CMAKE_SOURCE_DIR}/_dependencies.cmake")
+endif()
+
+add_subdirectory(src)
+add_subdirectory(apps)
+add_subdirectory(tests)

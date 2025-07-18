@@ -1,0 +1,2 @@
+enable_testing()
+# Add test executables here

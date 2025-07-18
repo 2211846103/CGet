@@ -21,7 +21,7 @@
 import click
 import json
 from pathlib import Path
-from cget.utils import create_project_structure
+from cget.utils.create_project import create_project_structure
 
 
 @click.command("init")
@@ -30,7 +30,7 @@ from cget.utils import create_project_structure
 @click.option("--force", is_flag=True, default=False, help="Force reset project")
 def init_command(name, cmake_version, force):
   """Initialize a new cget.json"""
-  base: Path = create_project_structure(name, cmake_version, force)
+  base: Path = create_project_structure(name, "0.1.0", cmake_version, force)
 
   data = {
     "name": name,

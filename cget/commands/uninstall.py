@@ -21,7 +21,8 @@ import click
 import os
 import json
 import shutil
-from cget.utils import save_lock, load_lock
+from cget.utils.misc import save_lock, load_lock
+from pathlib import Path
 
 
 @click.command("uninstall")
@@ -69,8 +70,12 @@ def uninstall_command(source: str):
 
   _,repo = source.split("/", 1)
 
-  path = os.path.join("extern", repo)
-  if os.path.exists(path):
-    shutil.rmtree(path)
+  extern_path = Path(os.path.join("extern", repo))
+  if extern_path.exists() or extern_path.is_symlink():
+        extern_path.unlink()
+
+  package_path = os.path.join(".cget_packages", repo)
+  if os.path.exists(package_path):
+    shutil.rmtree(package_path)
 
   click.echo(f"Removed dependency '{source}'")
