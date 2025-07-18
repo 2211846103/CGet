@@ -28,7 +28,8 @@ setup(
   include_package_data=True,
   install_requires=[
     "click>=8.0",
-    "requests>=2.0"
+    "requests>=2.0",
+    'packaging>=25.0'
   ],
   entry_points={
     "console_scripts": [
@@ -39,7 +40,7 @@ setup(
   description="Lightweight C++ package manager using CPM and CMake made with Python",
   classifiers=[
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU General Public License v3.0",
   ],
   python_requires='>=3.7',
 )
